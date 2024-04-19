@@ -165,7 +165,7 @@ tools = [return_number, dummy_tool, add_numbers]  # List of tools
 
 def create_agent() -> Runnable:
     """Creates a GPT-3.5-turbo agent runnable with access to the list of tools defined above"""
-    # Need to set OPENAI_API_KEY environment variable <export OPENAI_API_KEY="key">
+    # Need to set OPENAI_API_KEY environment variable: export OPENAI_API_KEY="<key>"
     llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
     llm_with_tools = llm.bind_tools(tools)
 
@@ -199,7 +199,7 @@ def create_agent() -> Runnable:
     return agent
 
 
-def run_chatgpt_agent(user_query: str, user_id: int) -> str:
+def run_openai_agent(user_query: str, user_id: int) -> str:
     """
     Runs an agent using gpt-3.5-turbo as the LLM
 
@@ -215,13 +215,13 @@ def run_chatgpt_agent(user_query: str, user_id: int) -> str:
     return result["output"]
 
 
-agents = {"chatgpt": run_chatgpt_agent, "llama2": run_llama2_agent}
+agents = {"gpt-3.5-turbo": run_openai_agent, "llama2": run_llama2_agent}
 
 
-def main(agent: str = "chatgpt", user_id: int = 0):
+def main(agent: str = "gpt-3.5-turbo", user_id: int = 0):
     # User ID correlates to the index of the secret key in secretkeys, not really a user ID in essence
     if agent not in agents:
-        sys.exit("Pick an agent from the following: [chatgpt, llama2]")
+        sys.exit("Pick an agent from the following: [gpt-3.5-turbo, llama2]")
     # User prompt
     user_query = input("What would you like to do today?\n>>> ")
     # Run agent
