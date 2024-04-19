@@ -1,0 +1,4 @@
+fire
+langchain 0.1.16
+pyffx 0.3.0
+git+https://github.com/sarojaerabelli/py-fhe.git@master
