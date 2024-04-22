@@ -25,7 +25,7 @@ def initialize_ciphertexts(dir: str) -> dict[int, Ciphertext]:
     to ciphertext object.
     """
     ctxts = {}
-    ciphertext_regex = "([0-9]+)\.txt"
+    ciphertext_regex = r"([0-9]+)\.txt"
     for file in os.listdir(f"./{dir}"):
         match = re.match(ciphertext_regex, file)
         if match:
@@ -44,15 +44,16 @@ def add_encrypted_numbers(nums: list[str]) -> str:
         Returns:
             (str): Ciphertext serialization of the sum
     """
-    if not nums:
-        raise ValueError("Empty list passed to add_encrypted_numbers")
     params, key_generator = load_encoder("HE_data/HE.txt")
     encoder = IntegerEncoder(params, 10)
     encryptor = BFVEncryptor(params, key_generator.public_key)
     evaluator = BFVEvaluator(params)
-    sum = encryptor.encrypt(encoder.encode(0))
-    for num in nums:
-        sum = evaluator.add(sum, load_ciphertext(serialization=num))
+    # For some reason the library doesn't work if I initialize sum to 0
+    if not nums:
+        return serialize_ciphertext(encryptor.encrypt(encoder.encode(0)))
+    sum = load_ciphertext(nums[0])
+    for i in range(1, len(nums)):
+        sum = evaluator.add(sum, load_ciphertext(serialization=nums[i]))
     return serialize_ciphertext(sum)
 
 
@@ -87,10 +88,13 @@ def multiply_encrypted_numbers(nums: list[str]) -> str:
     encoder = IntegerEncoder(params, 10)
     encryptor = BFVEncryptor(params, key_generator.public_key)
     evaluator = BFVEvaluator(params)
-    prod = encryptor.encrypt(encoder.encode(1))
-    for num in nums:
+    # For some reason the library doesn't work if I initialize prod to 1
+    if not nums:
+        return serialize_ciphertext(encryptor.encrypt(encoder.encode(1)))
+    prod = load_ciphertext(nums[0])
+    for i in range(1, len(nums)):
         prod = evaluator.multiply(
-            prod, load_ciphertext(serialization=num), key_generator.relin_key
+            prod, load_ciphertext(serialization=nums[i]), key_generator.relin_key
         )
     return serialize_ciphertext(prod)
 
