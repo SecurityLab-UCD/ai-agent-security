@@ -1,0 +1,3 @@
+[submodule "pyfhe"]
+	path = pyfhe
+	url = https://github.com/sarojaerabelli/py-fhe

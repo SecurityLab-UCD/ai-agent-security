@@ -1,17 +1,22 @@
 # ai-agent-security
 This repository contains source code for the demos and attacks we present in our paper.
 
+## Requirements
+[Python 3.8](https://www.python.org/downloads/release/python-380/) or above
+
 ## Setup
-Install requirements
-```sh
-pip install -r requirements.txt
-```
 `env.sh` is for letting Python find our modules. Source it from repo root directory.  
 ```sh
 source ./src/env.sh
 ```
 
+Run `init.sh` to install dependencies
+```sh
+./src/init.sh
+```
+
 Generate homomorphic encryption data
+- Run `python HE_data.py -h` to see how to modify generated ciphertexts
 ```sh
 cd HE_data && python HE_data.py && cd ../
 ```
@@ -27,10 +32,6 @@ To run the agent
 ```sh
 python agents/ssn_agent.py --agent="<agent>" --user_id=<id>
 ```
-`agent` can be either `llama2` or `gpt-3.5-turbo` (default `gpt-3.5-turbo`)
-
-`id` can be any integer between 0 and 3 inclusive (default 0)
-- We provide four numbers in an array to test the agent on
 
 When prompting, write "number" instead of "SSN" or "social security number" to avoid triggering alignment. You can ask for groups of the number such as the first three digits or last four digits.
 
@@ -49,5 +50,9 @@ Example prompt: `What is the product of indices 0 and 1?`
 ## Tests
 To run tests
 ```sh
+# Create ciphertext files
+cd HE_data && python HE_data.py && cd ../
+
+# Run tests
 pytest tests/*
 ```
