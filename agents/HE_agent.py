@@ -1,9 +1,4 @@
-from bfv.bfv_evaluator import BFVEvaluator
-from bfv.int_encoder import IntegerEncoder
-from bfv.bfv_decryptor import BFVDecryptor
-from bfv.bfv_encryptor import BFVEncryptor
-from util.ciphertext import Ciphertext
-import os
+import argparse
 from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad.openai_tools import (
     format_to_openai_tool_messages,
@@ -14,9 +9,15 @@ from langchain_core.runnables.base import Runnable
 from langchain_core.tools import StructuredTool
 from langchain_openai import ChatOpenAI
 from langchain.pydantic_v1 import BaseModel, Field
+import os
 import re
 
 from HE_data.HE_data import load_encoder, load_ciphertext, serialize_ciphertext
+from bfv.bfv_evaluator import BFVEvaluator
+from bfv.int_encoder import IntegerEncoder
+from bfv.bfv_decryptor import BFVDecryptor
+from bfv.bfv_encryptor import BFVEncryptor
+from util.ciphertext import Ciphertext
 
 
 def initialize_ciphertexts(dir: str) -> dict[int, Ciphertext]:
@@ -116,17 +117,21 @@ multiply_numbers = StructuredTool.from_function(
     args_schema=MultiplyEncryptedNumbersInput,
 )
 
-tools = [add_numbers, multiply_numbers]  # List of tools
 
-
-def create_agent() -> Runnable:
+def create_agent(model_name: str = "gpt-3.5-turbo") -> Runnable:
     """
-    Creates a gpt-3.5-turbo agent runnable with access to tools add_numbers
-    and multiply_numbers.
+    Creates an agent runnable with access to the tools add_numbers and
+    multiply_numbers.
+
+        Args:
+            model_name (str): OpenAI LLM name for agent reasoning
+
+        Returns:
+            (Runnable): Langchain runnable representing agent
     """
     # Need to set OPENAI_API_KEY environment variable: export OPENAI_API_KEY="<key>"
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-    llm_with_tools = llm.bind_tools(tools)
+    llm = ChatOpenAI(model=model_name, temperature=0)
+    llm_with_tools = llm.bind_tools([add_numbers, multiply_numbers])
 
     template_query = """Based on the numbers below, return a response to the user's question:
     Numbers: {numbers}
@@ -176,13 +181,17 @@ def post_process(response: str) -> str:
     )
 
 
-def main():
+def main(args):
     # Load ciphertext objects
     ctxts = initialize_ciphertexts("HE_data")
 
     user_query = input("What would you like to do today?\n>>> ")
 
-    agent_executor = AgentExecutor(agent=create_agent(), tools=tools, verbose=True)
+    agent_executor = AgentExecutor(
+        agent=create_agent(args.model),
+        tools=[add_numbers, multiply_numbers],
+        verbose=True,
+    )
     result = agent_executor.invoke(
         {
             "question": user_query,
@@ -210,4 +219,13 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--model",
+        choices=["gpt-3.5-turbo", "gpt-4-turbo"],
+        default="gpt-3.5-turbo",
+        help="LLM for agent reasoning",
+    )
+
+    args = parser.parse_args()
+    main(args)

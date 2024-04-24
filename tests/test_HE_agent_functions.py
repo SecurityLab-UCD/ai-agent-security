@@ -1,6 +1,3 @@
-from bfv.int_encoder import IntegerEncoder
-from bfv.bfv_decryptor import BFVDecryptor
-
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -9,11 +6,14 @@ from agents.HE_agent import (
     multiply_encrypted_numbers,
     initialize_ciphertexts,
 )
-
 from HE_data.HE_data import serialize_ciphertext, load_ciphertext, load_encoder
+from bfv.int_encoder import IntegerEncoder
+from bfv.bfv_decryptor import BFVDecryptor
 
 
-@given(st.integers(min_value=0, max_value=19), st.integers(min_value=0, max_value=19))
+# Default data creation uses a plaintext modulus of 401. This means that the
+# numbers that will be encrypted are 0 through 20.
+@given(st.integers(min_value=0, max_value=20), st.integers(min_value=0, max_value=20))
 def test_add_encrypted_numbers(num1, num2):
     # Setup
     ciphtexts = initialize_ciphertexts("./HE_data")
@@ -33,7 +33,9 @@ def test_add_encrypted_numbers(num1, num2):
     )
 
 
-@given(st.integers(min_value=0, max_value=19), st.integers(min_value=0, max_value=19))
+# Default data creation uses a plaintext modulus of 401. This means that the
+# numbers that will be encrypted are 0 through 20.
+@given(st.integers(min_value=0, max_value=20), st.integers(min_value=0, max_value=20))
 def test_multiply_encrypted_numbers(num1, num2):
     # Setup
     ciphtexts = initialize_ciphertexts("./HE_data")

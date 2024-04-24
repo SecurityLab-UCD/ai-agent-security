@@ -1,10 +1,13 @@
-from bfv.int_encoder import IntegerEncoder
+import argparse
+import sys
+
 from bfv.bfv_decryptor import BFVDecryptor
 from bfv.bfv_encryptor import BFVEncryptor
 from bfv.bfv_key_generator import BFVKeyGenerator
 from bfv.bfv_parameters import BFVParameters
-from util.polynomial import Polynomial
+from bfv.int_encoder import IntegerEncoder
 from util.ciphertext import Ciphertext
+from util.polynomial import Polynomial
 
 
 def serialize_polynomial(polynomial: Polynomial) -> str:
@@ -14,9 +17,11 @@ def serialize_polynomial(polynomial: Polynomial) -> str:
     Format:
     <ring_degree> <coeff_1> ... <coeff_n>
     """
-    serialization = str(polynomial.ring_degree)
-    for coeff in polynomial.coeffs:
-        serialization += f" {coeff}"
+    serialization = (
+        str(polynomial.ring_degree)
+        + " "
+        + " ".join([str(coeff) for coeff in polynomial.coeffs])
+    )
     return serialization
 
 
@@ -98,7 +103,7 @@ def load_encoder(filename: str):
     <relin_key.base>-<relin_key.keys[0]>|...|<relin_key.keys[len(relin_key.keys) - 1]>
     """
     with open(filename, "r") as f:
-        lines = f.readlines()
+        lines = [line.strip() for line in f.readlines()]
     # Parse serializations
     params_serialization = lines[0].split(" ")
     pk_serialization = [x.split(" ") for x in lines[1].split("|")]
@@ -150,15 +155,12 @@ def check_load_relin_key(k1, k2):
     return True
 
 
-def main():
+def main(args):
     # Setup of encryptor
-    degree = 8
-    # Increase plain modulus to work with larger numbers
-    # Must be a prime congruent to 1 modulo 16
-    plain_modulus = 401  # Can only handle numbers in interval [0, 400]
-    ciph_modulus = 8000000000000
     params = BFVParameters(
-        poly_degree=degree, plain_modulus=plain_modulus, ciph_modulus=ciph_modulus
+        poly_degree=args.degree,
+        plain_modulus=args.plain_modulus,
+        ciph_modulus=args.ciph_modulus,
     )
     key_generator = BFVKeyGenerator(params)
     public_key = key_generator.public_key
@@ -178,7 +180,10 @@ def main():
     decryptor = BFVDecryptor(params, secret_key)
 
     # Generate and save numbers
-    for num in range(20):
+    # Limiting max number so all numbers multiplied by themselves can be
+    # handled by encryptor since user can choose to do that in HE_agent.
+    num = 0
+    while num**2 <= (args.plain_modulus - 1):
         plaintext = encoder.encode(num)
         ciphtext = encryptor.encrypt(plaintext)
         with open(f"{num}.txt", "w") as f:
@@ -186,7 +191,45 @@ def main():
         # Verify save works
         loaded_ciphertext = load_ciphertext(filename=f"{num}.txt")
         assert encoder.decode(decryptor.decrypt(loaded_ciphertext)) == num
+        num += 1
 
 
 if __name__ == "__main__":
-    main()
+
+    def check_plain_modulus(value: str) -> int:
+        """Type callable for plain_modulus argument"""
+        try:  # Using a try-except for more descriptive error message
+            # Increase plain modulus to work with larger numbers
+            # A larger plaintext modulus is more compute-intensive
+            # Can only handle numbers in interval [0, value - 1]
+            value = int(value)
+            if not value % 16 == 1:  # Must be a prime congruent to 1 modulo 16
+                raise ValueError
+            return value
+        except ValueError:
+            print(
+                "usage: HE_data.py [-h] [--degree DEGREE] [--plain_modulus PLAIN_MODULUS] [--ciph_modulus CIPH_MODULUS]"
+            )
+            print(
+                f"HE_data.py: error: argument --plain_modulus: invalid check_plain_modulus value: '{value}'"
+            )
+            print(f"{value} is not a prime congruent to 1 modulo 16")
+            sys.exit(1)
+
+    ######################
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--degree", type=int, default=8, required=False)
+    parser.add_argument(
+        "--plain_modulus",
+        type=check_plain_modulus,
+        default=401,
+        required=False,
+        help="Prime congruent to 1 modulo 16, encryptor can only handle numbers in interval [0, plain_modulus - 1]",
+    )
+    parser.add_argument(
+        "--ciph_modulus", type=int, required=False, default=8000000000000
+    )
+
+    args = parser.parse_args()
+    main(args)

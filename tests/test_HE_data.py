@@ -1,15 +1,6 @@
-from bfv.int_encoder import IntegerEncoder
-from bfv.bfv_decryptor import BFVDecryptor
-from bfv.bfv_encryptor import BFVEncryptor
-from bfv.bfv_key_generator import BFVKeyGenerator
-from bfv.bfv_parameters import BFVParameters
-from util.polynomial import Polynomial
-from util.ciphertext import Ciphertext
-
 from hypothesis import given
 from hypothesis import strategies as st
-
-import os
+from tempfile import NamedTemporaryFile
 
 from HE_data.HE_data import (
     serialize_encoder,
@@ -20,6 +11,13 @@ from HE_data.HE_data import (
     load_ciphertext,
     serialize_polynomial,
 )
+from bfv.bfv_decryptor import BFVDecryptor
+from bfv.bfv_encryptor import BFVEncryptor
+from bfv.bfv_key_generator import BFVKeyGenerator
+from bfv.bfv_parameters import BFVParameters
+from bfv.int_encoder import IntegerEncoder
+from util.ciphertext import Ciphertext
+from util.polynomial import Polynomial
 
 
 @given(st.integers(min_value=0, max_value=400))
@@ -85,9 +83,10 @@ def test_encoder_functions():
     )
     key_generator = BFVKeyGenerator(params)
     serialization = serialize_encoder(params, key_generator)
-    # assert check_load_relin_key()
-    save_encoder("temp_encoder.txt", serialization)
-    loaded_params, loaded_key_generator = load_encoder("temp_encoder.txt")
+
+    temp_file = NamedTemporaryFile()
+    save_encoder(temp_file.name, serialization)
+    loaded_params, loaded_key_generator = load_encoder(temp_file.name)
     assert loaded_params.ciph_modulus == params.ciph_modulus
     assert loaded_params.plain_modulus == params.plain_modulus
     assert loaded_params.poly_degree == params.poly_degree
@@ -103,4 +102,4 @@ def test_encoder_functions():
     assert check_load_relin_key(key_generator.relin_key, loaded_key_generator.relin_key)
 
     # Cleanup
-    os.remove("temp_encoder.txt")
+    temp_file.close()

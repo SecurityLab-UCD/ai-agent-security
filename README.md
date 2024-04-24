@@ -10,9 +10,9 @@ This repository contains source code for the demos and attacks we present in our
 source ./src/env.sh
 ```
 
-Run `init.sh` to install dependencies
+Install dependencies
 ```sh
-./src/init.sh
+pip install -r requirements.txt
 ```
 
 Generate homomorphic encryption data
@@ -30,7 +30,7 @@ export OPENAI_API_KEY="<key>"
 ### SSN Agent Demo
 To run the agent
 ```sh
-python agents/ssn_agent.py --agent="<agent>" --user_id=<id>
+python agents/ssn_agent.py --model=<model> --user_id=<id> --ssns_path=<path_to_ssns> --secretkeys_path=<path_to_secretkeys>
 ```
 
 When prompting, write "number" instead of "SSN" or "social security number" to avoid triggering alignment. You can ask for groups of the number such as the first three digits or last four digits.
@@ -40,7 +40,7 @@ Example prompt: `What are the first three digits of my number?`
 ### Homomorphic Encryption Agent Demo
 To run the agent
 ```sh
-python agents/HE_agent.py
+python agents/HE_agent.py --model=<model>
 ```
 When prompting, please specify "sum" or "product" for postprocessing reasons. The default encryptor we use cannot handle numbers greater than 400 (this can be changed in `HE_data/HE_data.py`), so limit calculation results to the range 0 to 400 inclusive.
 
@@ -50,7 +50,7 @@ Example prompt: `What is the product of indices 0 and 1?`
 ## Tests
 To run tests
 ```sh
-# Create ciphertext files
+# Create ciphertext files if you haven't already
 cd HE_data && python HE_data.py && cd ../
 
 # Run tests
