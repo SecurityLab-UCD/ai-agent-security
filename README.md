@@ -7,7 +7,7 @@ This repository contains source code for the demos and attacks we present in our
 ## Setup
 `env.sh` is for letting Python find our modules. Source it from repo root directory.  
 ```sh
-source ./src/env.sh
+source ./env.sh
 ```
 
 Install dependencies
