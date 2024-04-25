@@ -8,6 +8,7 @@ def en(x: int):
         val = 94 + val
     return chr(val)
 
+
 # Call encode a second time to undo encoding
 def encode(message: str) -> str:
-    return "".join(map(en, [char for char in message]))
+    return "".join(map(en, [ord(char) for char in message]))

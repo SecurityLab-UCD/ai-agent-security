@@ -1,3 +1,6 @@
+from hypothesis import given
+from hypothesis import strategies as st
+
 from encoding_experiment.encoding import en, encode
 
 
@@ -15,6 +18,9 @@ def test_en():
     assert ord(en(ord(en(70)))) == 70
 
 
-def test_encode():
-    word1 = "Hello World!"
-    assert encode(word1) == "w..."
+# Using only ASCII 33 to 126 because LLMs use whitespace as separator, so can't
+# use whitespace as part of ciphertext
+@given(st.text(alphabet=[chr(x) for x in range(33, 127)], min_size=1))
+def test_encode(s):
+    assert encode(s) != s
+    assert encode(encode(s)) == s
