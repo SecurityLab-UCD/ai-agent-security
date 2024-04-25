@@ -2,3 +2,4 @@
 *.txt
 !requirements.txt
 .vscode
+.hypothesis
