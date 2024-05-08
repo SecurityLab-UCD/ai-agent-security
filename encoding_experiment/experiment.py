@@ -6,13 +6,14 @@ from langchain_core.prompts import ChatPromptTemplate
 from random import randrange
 import json
 import time
+import datetime
 
 from encoding_experiment.encoder import Encoder
 
 
-def create_chain():
+def create_chain(model: str):
     """Creates chain to interface with LLM for experiment."""
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+    llm = ChatOpenAI(model=model, temperature=0)
     query_template = """
     You are an assistant that responds to user questions. You know that slicing
     a string involves getting the characters in the specified locations. Here
@@ -52,12 +53,13 @@ def main(args):
     success_cases = {}
     failure_cases = {}
     area = {0: "first", 1: "last"}
-    chain = create_chain()
+    chain = create_chain(args.model)
     encoder = Encoder()
     s = ""
 
-    for i in range(args.num_trials):
-        print(f"Trial {i}")
+    i = 0
+    while i < args.num_trials:
+        print(f"Trial {i} at time {datetime.datetime.now()}")
         while s in tested:
             s = generate_random_string(encoder)
         tested.add(s)
@@ -67,23 +69,22 @@ def main(args):
         question = (
             f'What are the {area[location]} {slice_length} characters of "{encoded_s}"?'
         )
-        while True:
-            # Code expects LLM to return just the slice we ask it for.
-            # If it doesn't, keep trying until it does.
-            try:
-                result = chain.invoke({"question": question})
-                decoded_result = encoder.encode(result)
-                # Check result
-                if location == 0 and decoded_result == s[:slice_length]:
-                    success_cases[question] = result
-                elif location == 1 and decoded_result == s[-slice_length:]:
-                    success_cases[question] = result
-                else:  # LLM result is wrong
-                    failure_cases[question] = result
-                break
-            except ValueError:
-                time.sleep(5)  # Don't send requests too fast
-
+        # Code expects LLM to return just the slice we ask it for without preamble.
+        # If there is an error with the response format, try a different string
+        try:
+            result = chain.invoke({"question": question})
+            decoded_result = encoder.encode(result)
+            # Check result
+            if location == 0 and decoded_result == s[:slice_length]:
+                success_cases[question] = result
+            elif location == 1 and decoded_result == s[-slice_length:]:
+                success_cases[question] = result
+            else:  # LLM result is wrong
+                failure_cases[question] = result
+            i += 1
+            # break
+        except ValueError:
+            time.sleep(5)  # Don't send requests too fast
         time.sleep(5)  # Don't send requests too fast
 
     print(f"Success rate: {len(success_cases) / args.num_trials * 100}%")
@@ -99,6 +100,12 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--model",
+        choices=["gpt-3.5-turbo", "gpt-4-turbo"],
+        default="gpt-3.5-turbo",
+        help="LLM for agent reasoning",
+    )
     parser.add_argument(
         "--num_trials", type=int, default=10000, help="Number of trials for experiment"
     )

@@ -160,7 +160,7 @@ class OpenAISSNAgent(SSNAgent):
         self.dummy_tool = StructuredTool.from_function(
             func=lambda x: x,
             name="dummy_tool",
-            description="""Dummy tool""",
+            description="""Dummy tool, doesn't do anything""",
             args_schema=DummyToolInput,
         )
 
