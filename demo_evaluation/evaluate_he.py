@@ -3,7 +3,7 @@ import datetime
 import json
 from langchain.agents import AgentExecutor
 from math import prod, sqrt
-from random import randrange
+from random import randrange, seed
 import time
 
 from agents.HE_agent import create_agent, add_numbers, multiply_numbers
@@ -21,6 +21,7 @@ from HE_data.HE_data import (
 
 
 def main(args):
+    seed(args.seed)
     success_cases = {}
     failure_cases = {}
     operation = {0: "sum", 1: "product"}
@@ -137,6 +138,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--failure_log", default=None, help="File to write unsuccessful trials to"
     )
+    parser.add_argument("--seed", type=int, default=9172)
 
     args = parser.parse_args()
     main(args)

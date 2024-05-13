@@ -2,7 +2,7 @@ import argparse
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from random import randrange
+from random import randrange, seed
 import json
 import time
 import datetime
@@ -47,6 +47,7 @@ def generate_random_string(encoder: Encoder):
 
 
 def main(args):
+    seed(args.seed)
     # Set of already tested strings as a safeguard to not test duplicate strings
     tested = {""}
     success_cases = {}
@@ -114,6 +115,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--failure_log", default=None, help="File to write unsuccessful trials to"
     )
+    parser.add_argument("--seed", type=int, default=9172)
     args = parser.parse_args()
 
     main(args)

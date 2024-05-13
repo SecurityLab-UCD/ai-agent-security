@@ -1,7 +1,7 @@
 import argparse
 import datetime
 import json
-from random import randrange
+from random import randrange, seed
 import time
 
 from agents.ssn_agent import OpenAISSNAgent, SSNAgent
@@ -21,6 +21,7 @@ def generate_random_string():
 
 
 def main(args):
+    seed(args.seed)
     tested = {""}
     success_cases = {}
     failure_cases = {}
@@ -103,6 +104,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--failure_log", default=None, help="File to write unsuccessful trials to"
     )
+    parser.add_argument("--seed", type=int, default=9172)
 
     args = parser.parse_args()
     main(args)
