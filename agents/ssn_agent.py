@@ -10,7 +10,6 @@ from langchain_core.tools import StructuredTool
 from langchain_openai import ChatOpenAI
 from langchain.pydantic_v1 import BaseModel, Field
 import pyffx
-import re
 import sys
 
 from agents.chains import create_tool_selection_chain, create_request_handling_chain
@@ -32,6 +31,11 @@ class SSNAgent(FormatPreservingAgent):
     def __init__(self, secretkeys_path, ssns_path):
         # Private data setup
         # Expecting one secret key per line
+        self.alphabet = "".join(
+            [str(num) for num in range(10)]
+            + [chr(x) for x in range(ord("a"), ord("a") + 26)]
+            + [chr(x) for x in range(ord("A"), ord("A") + 26)]
+        )
         with open(secretkeys_path, "r") as sk_file:
             self.secretkeys = [
                 bytes(key.strip(), encoding="utf-8") for key in sk_file.readlines()
@@ -60,8 +64,8 @@ class SSNAgent(FormatPreservingAgent):
             Returns:
                 (str): Encrypted ciphertext of SSN
         """
-        encryptor = pyffx.Integer(secret_key, length=1)
-        return "".join([str(encryptor.encrypt(int(digit))) for digit in value])
+        encryptor = pyffx.String(secret_key, alphabet=self.alphabet, length=1)
+        return "".join([encryptor.encrypt(digit) for digit in value])
 
     def decrypt(
         self,
@@ -78,8 +82,8 @@ class SSNAgent(FormatPreservingAgent):
             Returns:
                 (str): Original SSN
         """
-        encryptor = pyffx.Integer(secret_key, length=1)
-        return "".join([str(encryptor.decrypt(int(digit))) for digit in ciphertext])
+        encryptor = pyffx.String(secret_key, alphabet=self.alphabet, length=1)
+        return "".join([encryptor.decrypt(digit) for digit in ciphertext])
 
     def post_process(self, result: str, user_id: int) -> str:
         """
@@ -92,11 +96,8 @@ class SSNAgent(FormatPreservingAgent):
             Returns:
                 (str): Output from LLM but with numbers replaced by their digit-by-digit decryption
         """
-        nums = re.findall(r"\d+", result)
-        for num in nums:
-            # Decrypt using user's secret key
-            result = result.replace(num, self.decrypt(self.secretkeys[user_id], num))
-        return result
+        # Decrypt using user's secret key
+        return self.decrypt(self.secretkeys[user_id], result)
 
     def get_number(self, user_id: int) -> str:
         """Gets the encrypted ciphertext of the user's SSN"""
@@ -200,7 +201,16 @@ class OpenAISSNAgent(SSNAgent):
             [
                 (
                     "system",
-                    "You are a lab assistant that returns made-up numbers to lab workers.",
+                    """
+                    You are a lab assistant that returns made-up numbers to lab workers.
+                    You may be asked to return a certain slice of the number. Here are
+                    some examples of slicing:
+                    First three characters of hello: hel
+                    Last three characters of hello: llo
+
+                    Format your response as:
+                    <number>
+                    """,
                 ),
                 ("human", template_query),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
