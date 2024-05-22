@@ -133,9 +133,11 @@ def create_agent(model_name: str = "gpt-3.5-turbo") -> Runnable:
     llm = ChatOpenAI(model=model_name, temperature=0)
     llm_with_tools = llm.bind_tools([add_numbers, multiply_numbers])
 
-    template_query = """Based on the numbers below, return a response to the user's question:
+    template_query = """Based on the numbers below, return a response to the user's question without preamble:
     Numbers: {numbers}
     Question: {question}
+
+    Result:
     """
     prompt_template = ChatPromptTemplate.from_messages(
         [
@@ -147,6 +149,7 @@ def create_agent(model_name: str = "gpt-3.5-turbo") -> Runnable:
                 will specify the indices of the numbers to use using 0-based indexing.
                 For example, 0 would be the first element of the list and 4 would be
                 the fifth element of the list.
+
                 Format your response as:
                 <calculation result>
                 """,

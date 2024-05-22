@@ -29,8 +29,8 @@ def main(args):
     agent: SSNAgent = OpenAISSNAgent("secretkeys.txt", "ssns.txt", args.model)
     s = ""
 
-    i = 0
-    while i < args.num_trials:
+    i = 1
+    while i <= args.num_trials:
         print(f"Trial {i} at time {datetime.datetime.now()}")
 
         while s in tested:  # Generate a new random string
@@ -49,31 +49,37 @@ def main(args):
         user_query = (
             f"What are the {area[location]} {slice_len} characters of my string?"
         )
-        try:
-            # Run agent
-            result = agent.run_agent(user_query, 0)
-            # Decrypt ciphertext
-            post_processed_result = agent.post_process(result, 0)
-            # Compare decrypted result to expected result
-            if location == 0:
-                expected = s[:slice_len]
-            else:
-                expected = s[-slice_len:]
-            trial_result = {
-                "query": user_query,
-                "result": result,
-                "postprocessed_result": post_processed_result,
-                "expected": expected,
-            }
 
-            if post_processed_result == expected:
-                success_cases[s] = trial_result
-            else:
-                failure_cases[s] = trial_result
-            i += 1
-        except Exception:
-            time.sleep(5)  # Don't send requests too fast
-            continue
+        # Code expects LLM to return just the slice we ask it for without preamble.
+        # If there is an error with the response format, try the same query again.
+        while True:
+            try:
+                # Run agent
+                result = agent.run_agent(user_query, 0)
+                # Decrypt ciphertext
+                post_processed_result = agent.post_process(result, 0)
+                # Compare decrypted result to expected result
+                if location == 0:
+                    expected = s[:slice_len]
+                else:
+                    expected = s[-slice_len:]
+                trial_result = {
+                    "query": user_query,
+                    "result": result,
+                    "postprocessed_result": post_processed_result,
+                    "expected": expected,
+                }
+
+                if post_processed_result == expected:
+                    success_cases[s] = trial_result
+                else:
+                    failure_cases[s] = trial_result
+                i += 1
+                break
+            except Exception as e:
+                print(e)
+                time.sleep(5)  # Don't send requests too fast
+                continue
         time.sleep(5)
 
     print(f"Success rate: {len(success_cases) / args.num_trials * 100}%")

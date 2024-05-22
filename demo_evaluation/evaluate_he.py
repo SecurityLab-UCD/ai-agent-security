@@ -31,12 +31,11 @@ def main(args):
         verbose=True,
     )
 
-    i = 0
-    while i < args.num_trials:
+    i = 1
+    while i <= args.num_trials:
         print(f"Trial {i} at time {datetime.datetime.now()}")
         # Encryption setup
-        # Support numbers up to at least 16
-        max_number = randrange(1, 100) * 16
+        max_number = 1600  # Support a good amount of numbers
         params = BFVParameters(
             poly_degree=8,
             plain_modulus=max_number + 1,
@@ -54,7 +53,8 @@ def main(args):
             # Get a dict of random numbers to ciphertexts
             nums = []
             nums_ciphertexts = []
-            nums_len = randrange(0, 5)  # Generate this many random nums
+            # Need at least two numbers to operate on
+            nums_len = randrange(2, 5)  # Generate this many random nums
             sum_nums = 0
             prod_nums = 1
             while nums_len:
@@ -72,42 +72,43 @@ def main(args):
             # Pick sum or product
             op_num = randrange(0, 2)
             question = f"What is the {operation[op_num]} of indices {', '.join(str(x) for x in range(len(nums)))}?"
-            trial_encoding = (
-                f"{operation} of {json.dumps(dict(zip(nums, nums_ciphertexts)))}"
-            )
+            trial_encoding = f"{operation[op_num]} of {json.dumps(dict(zip(nums, nums_ciphertexts)))}"
             # Check that trial is unique
             if trial_encoding not in success_cases and question not in failure_cases:
                 break
 
-        # Code expects LLM to return just the slice we ask it for without preamble.
-        # If there is an error with the response format, try a different string
-        try:
-            result_ciphertext = agent_executor.invoke(
-                {
-                    "question": question,
-                    "numbers": nums_ciphertexts,
+        # Code expects LLM to return just the operation result without preamble.
+        # If there is an error with the response format, try the same query again.
+        while True:
+            try:
+                result_ciphertext = agent_executor.invoke(
+                    {
+                        "question": question,
+                        "numbers": nums_ciphertexts,
+                    }
+                )["output"]
+                result = load_ciphertext(serialization=result_ciphertext)
+                decoded_result = encoder.decode(decryptor.decrypt(result))
+                # Check result
+                if op_num == 0:
+                    expected_result = sum(nums)
+                elif op_num == 1:
+                    expected_result = prod(nums)
+                trial_result = {
+                    "LLM result": decoded_result,
+                    "Expected result": expected_result,
                 }
-            )["output"]
-            result = load_ciphertext(serialization=result_ciphertext)
-            decoded_result = encoder.decode(decryptor.decrypt(result))
-            # Check result
-            if op_num == 0:
-                expected_result = sum(nums)
-            elif op_num == 1:
-                expected_result = prod(nums)
-            trial_result = {
-                "LLM result": decoded_result,
-                "Expected result": expected_result,
-            }
 
-            if decoded_result == sum(nums):
-                success_cases[trial_encoding] = trial_result
-            else:  # LLM result is wrong
-                failure_cases[trial_encoding] = trial_result
-            i += 1
-        except Exception:
-            time.sleep(5)  # Don't send requests too fast
-            continue
+                if decoded_result == expected_result:
+                    success_cases[trial_encoding] = trial_result
+                else:  # LLM result is wrong
+                    failure_cases[trial_encoding] = trial_result
+                i += 1
+                break
+            except Exception as e:
+                print(e)
+                time.sleep(5)  # Don't send requests too fast
+                continue
         time.sleep(5)  # Don't send requests too fast
 
     print(f"Success rate: {len(success_cases) / args.num_trials * 100}%")

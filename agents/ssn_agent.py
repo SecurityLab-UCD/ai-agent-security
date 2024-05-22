@@ -193,9 +193,11 @@ class OpenAISSNAgent(SSNAgent):
             [self.return_number, self.dummy_tool, self.add_numbers]
         )
 
-        template_query = """Based on the user id below, return a response to the user's question:
+        template_query = """Based on the user id below, return a response to the user's question without preamble:
         User ID: {user_id}
         Question: {question}
+
+        Number:
         """
         prompt_template = ChatPromptTemplate.from_messages(
             [

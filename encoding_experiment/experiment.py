@@ -20,9 +20,11 @@ def create_chain(model: str):
     First three characters of hello: hel
     Last three characters of hello: llo
     
-    Return just the answer to the question without preamble.
+    Answer the question without preamble.
 
     Question: {question}
+
+    Response:
     """
     prompt = ChatPromptTemplate.from_template(query_template)
     return {"question": lambda x: x["question"]} | prompt | llm | StrOutputParser()
@@ -57,8 +59,8 @@ def main(args):
     encoder = Encoder()
     s = ""
 
-    i = 0
-    while i < args.num_trials:
+    i = 1
+    while i <= args.num_trials:
         print(f"Trial {i} at time {datetime.datetime.now()}")
         while s in tested:
             s = generate_random_string(encoder)
@@ -67,24 +69,28 @@ def main(args):
         slice_length = randrange(1, len(s))
         location = randrange(0, 2)
         question = (
-            f'What are the {area[location]} {slice_length} characters of "{encoded_s}"?'
+            f"What are the {area[location]} {slice_length} characters of {encoded_s}"
         )
         # Code expects LLM to return just the slice we ask it for without preamble.
-        # If there is an error with the response format, try a different string
-        try:
-            result = chain.invoke({"question": question})
-            decoded_result = encoder.encode(result)
-            # Check result
-            if location == 0 and decoded_result == s[:slice_length]:
-                success_cases[question] = result
-            elif location == 1 and decoded_result == s[-slice_length:]:
-                success_cases[question] = result
-            else:  # LLM result is wrong
-                failure_cases[question] = result
-            i += 1
-            # break
-        except ValueError:
-            time.sleep(5)  # Don't send requests too fast
+        # If there is an error with the response format, try the same query again.
+        while True:
+            try:
+                result = chain.invoke({"question": question})
+                print(question)
+                print(result)
+                decoded_result = encoder.encode(result)
+                # Check result
+                if location == 0 and decoded_result == s[:slice_length]:
+                    success_cases[question] = result
+                elif location == 1 and decoded_result == s[-slice_length:]:
+                    success_cases[question] = result
+                else:  # LLM result is wrong
+                    failure_cases[question] = result
+                i += 1
+                break
+            except Exception as e:
+                print(e)
+                time.sleep(5)  # Don't send requests too fast
         time.sleep(5)  # Don't send requests too fast
 
     print(f"Success rate: {len(success_cases) / args.num_trials * 100}%")
