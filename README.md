@@ -1,5 +1,6 @@
 # ai-agent-security
-This repository contains source code for the demos and attacks we present in our paper.
+This repository contains source code for the demos and attacks we present in our paper 
+[Security of AI Agents](https://arxiv.org/pdf/2406.08689).
 
 ## Requirements
 [Python 3.8](https://www.python.org/downloads/release/python-380/) or above
@@ -55,4 +56,15 @@ cd HE_data && python HE_data.py && cd ../
 
 # Run tests
 pytest tests/*
+```
+
+## Cite
+
+```biblatex
+@article{he2024security,
+  title={Security of AI Agents},
+  author={He, Yifeng and Wang, Ethan and Rong, Yuyang and Cheng, Zifei and Chen, Hao},
+  journal={arXiv preprint arXiv:2406.08689},
+  year={2024}
+}
 ```
