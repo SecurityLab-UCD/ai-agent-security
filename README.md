@@ -1,6 +1,7 @@
 # ai-agent-security
-This repository contains source code for the demos and attacks we present in our paper 
+This repository contains source code for the demos encryption defense we present in our paper 
 [Security of AI Agents](https://arxiv.org/pdf/2406.08689).
+The code for sandbox defense and evaluation can be found in [our fork of AgentBench](https://github.com/SecurityLab-UCD/AgentBench).
 
 ## Requirements
 [Python 3.8](https://www.python.org/downloads/release/python-380/) or above
@@ -61,10 +62,12 @@ pytest tests/*
 ## Cite
 
 ```biblatex
-@article{he2024security,
-  title={Security of AI Agents},
-  author={He, Yifeng and Wang, Ethan and Rong, Yuyang and Cheng, Zifei and Chen, Hao},
-  journal={arXiv preprint arXiv:2406.08689},
-  year={2024}
+@inproceedings{he2025aiagent,
+    author = {He, Yifeng and Wang, Ethan and Rong, Yuyang and Cheng, Zifei and Chen, Hao},
+    title = {Security of AI Agents},  
+    booktitle = {International Workshop on Responsible AI Engineering (RAIE)},
+    date = {2025-04-29},
+    address = {Ottawa, Ontario, Canada},
+    doi = {https://doi.org/10.48550/arXiv.2406.08689},
 }
 ```
